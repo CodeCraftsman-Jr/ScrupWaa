@@ -26,25 +26,35 @@ def main(context):
         res = context.res
         
         # Get path and method
-        path = req.path if hasattr(req, 'path') else req.url
+        # Appwrite provides path like "/search" or "/" 
+        path = req.path if hasattr(req, 'path') else '/'
         method = req.method
         
+        # Normalize path (remove trailing slash except for root)
+        if len(path) > 1 and path.endswith('/'):
+            path = path[:-1]
+        
         # Handle different routes
-        if method == 'GET' and '/health' in path:
+        if method == 'GET' and path == '/health':
             return res.json({
                 'status': 'ok',
                 'message': 'Universal Phone Scraper API is running'
             })
         
-        elif method == 'POST' and '/search' in path:
+        elif method == 'POST' and path == '/search':
             return handle_search(req, res)
         
-        elif method == 'GET' and '/' in path:
+        elif method == 'POST' and path == '/':
+            # Allow POST to root as well
+            return handle_search(req, res)
+        
+        elif method == 'GET' and path == '/':
             return res.json({
                 'message': 'Universal Phone Scraper API',
                 'version': '1.0.0',
                 'endpoints': {
                     'POST /search': 'Search for phones',
+                    'POST /': 'Search for phones (alternative)',
                     'GET /health': 'Health check'
                 }
             })
@@ -52,7 +62,13 @@ def main(context):
         else:
             return res.json({
                 'error': 'Not Found',
-                'message': f'Endpoint {path} not found'
+                'message': f'Endpoint {method} {path} not found',
+                'available_endpoints': {
+                    'POST /search': 'Search for phones',
+                    'POST /': 'Search for phones',
+                    'GET /health': 'Health check',
+                    'GET /': 'API info'
+                }
             }, 404)
     
     except Exception as e:
