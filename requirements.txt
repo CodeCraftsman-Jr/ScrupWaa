@@ -1,0 +1,18 @@
+# HTTP Requests and HTML Parsing
+requests==2.31.0
+beautifulsoup4==4.12.3
+lxml==5.1.0
+
+# User Agent Rotation (mimics real browsers)
+fake-useragent==1.4.0
+
+# Utilities
+python-dotenv==1.0.1
+
+# Anti-Bot Bypass Tools (for Cloudflare and bot detection)
+cloudscraper
+curl_cffi
+undetected-chromedriver
+
+# Web Interface
+flask==2.3.3

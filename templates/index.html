@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Mobile Phone Scraper</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/static/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-mobile-alt"></i> Universal Phone Scraper
+            </a>
+            <span class="navbar-text">
+                Search across GSMArena, 91mobiles & Kimovil
+            </span>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-8 mx-auto">
+                <div class="card shadow">
+                    <div class="card-header bg-light">
+                        <h4 class="mb-0"><i class="fas fa-search"></i> Phone Search</h4>
+                    </div>
+                    <div class="card-body">
+                        <form id="searchForm">
+                            <div class="mb-3">
+                                <label for="query" class="form-label">Search for phones:</label>
+                                <input type="text" class="form-control form-control-lg" id="query"
+                                       placeholder="e.g., Samsung Galaxy S24, iPhone 15, OnePlus..." required>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label class="form-label">Search Mode:</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="mode" id="basic" value="basic" checked>
+                                        <label class="form-check-label" for="basic">
+                                            Basic Search
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="mode" id="detailed" value="detailed">
+                                        <label class="form-check-label" for="detailed">
+                                            Detailed Search
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label for="maxResults" class="form-label">Max Results per Site:</label>
+                                    <select class="form-select" id="maxResults">
+                                        <option value="3">3</option>
+                                        <option value="5" selected>5</option>
+                                        <option value="10">10</option>
+                                        <option value="15">15</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label">Sites to Search:</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input site-checkbox" type="checkbox" id="gsmarena" checked>
+                                        <label class="form-check-label" for="gsmarena">
+                                            GSMArena
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input site-checkbox" type="checkbox" id="91mobiles" checked>
+                                        <label class="form-check-label" for="91mobiles">
+                                            91mobiles
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input site-checkbox" type="checkbox" id="kimovil" checked>
+                                        <label class="form-check-label" for="kimovil">
+                                            Kimovil
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-grid mt-4">
+                                <button type="submit" class="btn btn-primary btn-lg" id="searchBtn">
+                                    <i class="fas fa-search"></i> Search Phones
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- Progress Bar -->
+                        <div id="progressContainer" class="mt-4" style="display: none;">
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                     role="progressbar" style="width: 0%" id="progressBar"></div>
+                            </div>
+                            <p class="text-center mt-2" id="progressText">Initializing search...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Container -->
+                <div id="resultsContainer" class="mt-4" style="display: none;">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="fas fa-list"></i> Search Results</h5>
+                            <button class="btn btn-sm btn-outline-primary" id="exportBtn">
+                                <i class="fas fa-download"></i> Export JSON
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div id="resultsContent"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="mt-5 py-4 bg-light">
+        <div class="container text-center">
+            <p class="mb-0 text-muted">
+                <i class="fas fa-code"></i> Built with Python & Flask |
+                <i class="fas fa-database"></i> Data from GSMArena, 91mobiles & Kimovil
+            </p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
