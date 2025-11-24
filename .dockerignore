@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+docs/
+README.md
+*.md
+
+# Data files
+data/
+*.json
+
+# Web app files (not needed for function)
+web_app.py
+start_web.bat
+
+# Static files (deployed separately)
+templates/
+static/
+
+# Tests
+tests/
+test_*.py
+
+# OS
+.DS_Store
+Thumbs.db

@@ -9,10 +9,3 @@ fake-useragent==1.4.0
 # Utilities
 python-dotenv==1.0.1
 
-# Anti-Bot Bypass Tools (for Cloudflare and bot detection)
-cloudscraper
-curl_cffi
-undetected-chromedriver
-
-# Web Interface
-flask==2.3.3
