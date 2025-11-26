@@ -6,6 +6,14 @@ Entry point for serverless function deployment
 
 import json
 import os
+import sys
+
+# Add function directory to Python path for imports
+function_dir = os.path.dirname(os.path.abspath(__file__))
+if function_dir not in sys.path:
+    sys.path.insert(0, function_dir)
+
+# Now import modules
 from universal_search import UniversalSearch
 from format_results import format_detailed_results
 
@@ -82,10 +90,16 @@ def handle_search(req, res):
     """Handle phone search requests"""
     try:
         # Parse request body
-        if hasattr(req, 'body'):
-            body = req.body if isinstance(req.body, dict) else json.loads(req.body)
-        else:
-            body = json.loads(req.bodyRaw)
+        try:
+            if hasattr(req, 'body'):
+                body = req.body if isinstance(req.body, dict) else json.loads(req.body)
+            else:
+                body = json.loads(req.bodyRaw)
+        except Exception as e:
+            return res.json({
+                'error': 'Bad Request',
+                'message': f'Failed to parse request body: {str(e)}'
+            }, 400)
         
         # Extract parameters
         query = body.get('query', '').strip()
@@ -108,15 +122,24 @@ def handle_search(req, res):
             }, 400)
         
         # Perform search
-        searcher = UniversalSearch()
-        detailed = (mode == 'detailed')
-        
-        results = searcher.search(
-            query=query,
-            detailed=detailed,
-            max_results=max_results,
-            sites=sites
-        )
+        try:
+            searcher = UniversalSearch()
+            detailed = (mode == 'detailed')
+            
+            print(f"Starting search for: {query}")
+            results = searcher.search(
+                query=query,
+                detailed=detailed,
+                max_results=max_results,
+                sites=sites
+            )
+            print(f"Search completed. Found {len(results)} results")
+        except Exception as search_error:
+            print(f"Search error: {str(search_error)}")
+            return res.json({
+                'error': 'Search Failed',
+                'message': f'Scraping error: {str(search_error)}'
+            }, 500)
         
         # Format response
         if detailed:
