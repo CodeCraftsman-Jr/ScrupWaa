@@ -20,18 +20,23 @@ class UniversalSearch:
         self.mobiles91 = Mobiles91Scraper()
         self.kimovil = KimovilScraper()
         
-    def search_all(self, query: str, max_results_per_site: int = 10, sites: Optional[List[str]] = None) -> dict:
+    def search_all(self, query: str, max_results_per_site: int = 10, sites: Optional[List[str]] = None, max_results: int = None) -> dict:
         """
         Search for phones across all scrapers.
         
         Args:
             query: Search query (e.g., "Samsung Galaxy S24", "iPhone 15", "OnePlus")
-            max_results_per_site: Maximum results from each scraper
+            max_results_per_site: Maximum results from each scraper (deprecated, use max_results)
             sites: List of sites to search (optional). Options: ['gsmarena', '91mobiles', 'kimovil']
+            max_results: Maximum results to return (None for all)
             
         Returns:
             Dictionary with results from each scraper
         """
+        # Use max_results if provided, otherwise fall back to max_results_per_site
+        if max_results is not None:
+            max_results_per_site = max_results
+        
         if sites is None:
             sites = ['gsmarena', '91mobiles', 'kimovil']
         
@@ -54,8 +59,8 @@ class UniversalSearch:
             current_site += 1
             print(f"[{current_site}/{total_sites}] Searching GSMArena...")
             try:
-                # Get all results from GSMArena (no limit)
-                gsm_phones = self.gsmarena.search_phones(query, max_results=None)
+                # Use max_results_per_site (which now includes max_results if provided)
+                gsm_phones = self.gsmarena.search_phones(query, max_results=max_results_per_site if max_results_per_site != 10 else None)
                 results['scrapers']['gsmarena'] = {
                     'status': 'success',
                     'count': len(gsm_phones),
