@@ -54,11 +54,12 @@ class UniversalSearch:
             current_site += 1
             print(f"[{current_site}/{total_sites}] Searching GSMArena...")
             try:
-                gsm_phones = self.gsmarena.search_phones(query, max_results=max_results_per_site)
+                # Get all results from GSMArena (no limit)
+                gsm_phones = self.gsmarena.search_phones(query, max_results=None)
                 results['scrapers']['gsmarena'] = {
                     'status': 'success',
                     'count': len(gsm_phones),
-                    'phones': [p.to_dict() for p in gsm_phones]
+                    'phones': gsm_phones  # Keep as Phone objects for now
                 }
                 print(f"      [SUCCESS] Found {len(gsm_phones)} phones\n")
             except Exception as e:

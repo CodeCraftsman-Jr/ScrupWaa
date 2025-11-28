@@ -1,0 +1,64 @@
+name: Scrape Phone Data
+
+on:
+  # Run on manual trigger
+  workflow_dispatch:
+    inputs:
+      search_query:
+        description: 'Search query (e.g., Samsung S24)'
+        required: true
+        default: 'Samsung'
+      max_results:
+        description: 'Maximum results to scrape (0 for all)'
+        required: false
+        default: '20'
+  
+  # Run on schedule (optional - uncomment to enable)
+  # schedule:
+  #   - cron: '0 */6 * * *'  # Every 6 hours
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Run scraper with proxies
+        env:
+          APPWRITE_ENDPOINT: "https://cloud.appwrite.io/v1"
+          APPWRITE_PROJECT_ID: "68a227de003201ae2463"
+          APPWRITE_DATABASE_ID: "68a227fb00180c4a541a"
+          APPWRITE_COLLECTION_ID: "68a2280e0039af9b6a24"
+          APPWRITE_API_KEY: "standard_07fb15b720e462b3836f463480a1806e1bdff6395d21e97cb0d835c7403329923073329e7fb76ee8de3f42e732d391583be826c2a91afe6014c7e248cf14b64880e9597257eec3ad82c78bf1b13b99b9ecb8bc7357fab9284afa73e8e245788449418dcc468499870fd5da6ebbd5b1148370260ab2dc82431cd5ad5b2df32621"
+          SEARCH_QUERY: ${{ github.event.inputs.search_query || 'Samsung' }}
+          MAX_RESULTS: ${{ github.event.inputs.max_results || '20' }}
+        run: |
+          python github_scraper.py
+      
+      - name: Upload results
+        uses: actions/upload-artifact@v3
+        with:
+          name: scrape-results
+          path: data/*.json
+          retention-days: 30
+      
+      - name: Commit results (optional)
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add data/*.json || true
+          git diff --quiet && git diff --staged --quiet || git commit -m "Update scraped data - $(date +'%Y-%m-%d %H:%M:%S')"
+          git push || true
+        continue-on-error: true

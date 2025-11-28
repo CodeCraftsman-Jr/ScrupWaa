@@ -1,0 +1,17 @@
+# HTTP Requests and HTML Parsing
+requests==2.31.0
+beautifulsoup4==4.12.3
+lxml==5.1.0
+
+# User Agent Rotation (mimics real browsers)
+fake-useragent==1.4.0
+
+# Utilities
+python-dotenv==1.0.1
+
+# Flask web framework
+Flask==2.3.3
+flask-cors==4.0.0
+
+# Appwrite SDK for proxy database
+appwrite==4.1.0

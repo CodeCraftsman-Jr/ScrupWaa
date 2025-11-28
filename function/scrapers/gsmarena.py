@@ -5,6 +5,8 @@ GSMArena scraper for mobile phone specifications.
 from bs4 import BeautifulSoup
 from typing import Optional, List, Dict
 import re
+import time
+import random
 
 from utils.http_client import HTTPClient
 from models.phone import Phone
@@ -73,16 +75,48 @@ class GSMArenaScraper:
         return phone
     
     def _extract_brand_model(self, soup: BeautifulSoup) -> tuple:
-        """Extract brand and model name."""
-        title = soup.find('h1', class_='specs-phone-name-title')
-        if title:
-            text = title.get_text(strip=True)
-            # Usually format is "Brand Model"
+        """Extract brand and model name - based on mobile-specs-api implementation."""
+        # Method from thechandrakant15/mobile-specs-api
+        title_h1 = soup.find('h1', class_='specs-phone-name-title')
+        
+        if title_h1:
+            # Brand is in the <a> tag
+            brand_link = title_h1.find('a')
+            brand = brand_link.get_text(strip=True) if brand_link else ""
+            
+            # Model is the text node (not in any tag)
+            # Get all text contents and filter for text nodes
+            model_parts = []
+            for content in title_h1.contents:
+                # Check if it's a text node (not a tag)
+                if hasattr(content, 'strip') and content.strip():
+                    model_parts.append(content.strip())
+            
+            model = ' '.join(model_parts).strip()
+            
+            if brand and model:
+                return brand, model
+            
+            # Fallback: split the entire text
+            full_text = title_h1.get_text(strip=True)
+            parts = full_text.split(maxsplit=1)
+            if len(parts) >= 2:
+                return parts[0], parts[1]
+            elif len(parts) == 1:
+                return "Unknown", parts[0]
+        
+        # Last resort: try to extract from page title
+        page_title = soup.find('title')
+        if page_title:
+            text = page_title.get_text(strip=True)
+            # Remove " - GSMArena.com" suffix if present
+            text = text.replace(' - GSMArena.com', '').strip()
             parts = text.split(maxsplit=1)
             if len(parts) >= 2:
                 return parts[0], parts[1]
             elif len(parts) == 1:
                 return "Unknown", parts[0]
+        
         return None, None
     
     def _extract_price(self, soup: BeautifulSoup) -> Optional[str]:
@@ -212,13 +246,13 @@ class GSMArenaScraper:
         
         return highlights
     
-    def search_phones(self, query: str, max_results: int = 10) -> List[Phone]:
+    def search_phones(self, query: str, max_results: int = None) -> List[Phone]:
         """
         Search for phones on GSMArena.
         
         Args:
             query: Search query (e.g., "Samsung Galaxy S23")
-            max_results: Maximum number of results to return
+            max_results: Maximum number of results to return (None for all results)
             
         Returns:
             List of Phone objects
@@ -235,23 +269,51 @@ class GSMArenaScraper:
         soup = BeautifulSoup(response.text, 'lxml')
         phones = []
         
-        # Find all phone listings
+        # Find all phone listings - based on mobile-specs-api selector: .makers ul li
         makers = soup.find('div', class_='makers')
         if not makers:
             print("[FAILED] No search results found")
             return []
         
-        links = makers.find_all('a', limit=max_results)
+        # Get the ul element within makers
+        makers_list = makers.find('ul')
+        if not makers_list:
+            print("[FAILED] No phone list found")
+            return []
         
-        for link in links:
+        # Get all li items - mobile-specs-api method
+        li_items = makers_list.find_all('li', limit=max_results)
+        
+        if max_results is None:
+            print(f"[INFO] Found {len(li_items)} total results, scraping all...")
+        else:
+            print(f"[INFO] Found results, scraping up to {max_results}...")
+        
+        total = len(li_items)
+        for idx, li in enumerate(li_items, 1):
+            # Get the <a> tag within <li>
+            link = li.find('a')
+            if not link or not link.get('href'):
+                continue
+            
             href = link['href']
             # Ensure proper URL construction with slash
             if not href.startswith('/'):
                 href = '/' + href
             phone_url = self.BASE_URL + href
+            
+            print(f"[{idx}/{total}] Scraping: {phone_url}")
+            
+            # Add delay between requests to avoid rate limiting (5-10 seconds)
+            # Increased delays to prevent rate limiting
+            if idx > 1:  # Skip delay for first request
+                delay = random.uniform(5, 10)
+                print(f"⏳ Waiting {delay:.1f}s before next request...")
+                time.sleep(delay)
+            
             phone = self.scrape_phone(phone_url)
             if phone:
                 phones.append(phone)
         
-        print(f"[SUCCESS] Found {len(phones)} phones")
+        print(f"[SUCCESS] Successfully scraped {len(phones)} out of {total} phones")
         return phones

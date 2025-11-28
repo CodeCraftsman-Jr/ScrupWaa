@@ -5,9 +5,9 @@ Scrapes mobile phone data from GSMArena, 91mobiles, and Kimovil without proxies.
 
 import json
 import os
-from scrapers.gsmarena import GSMArenaScraper
-from scrapers.mobiles91 import Mobiles91Scraper
-from scrapers.kimovil import KimovilScraper
+from function.scrapers.gsmarena import GSMArenaScraper
+from function.scrapers.mobiles91 import Mobiles91Scraper
+from function.scrapers.kimovil import KimovilScraper
 
 
 def save_to_json(phones, filename):

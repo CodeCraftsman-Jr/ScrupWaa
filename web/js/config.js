@@ -1,12 +1,11 @@
 // API Configuration
-// Replace this URL with your Appwrite Function URL after deployment
-// Format: https://cloud.appwrite.io/v1/functions/[FUNCTION_ID]/executions
+// Local development - running Flask server locally
 const API_CONFIG = {
-    // Appwrite Function URL (deployed successfully!)
-    functionUrl: 'https://69246267000d261cd469.fra.appwrite.run',
+    // Local Flask server
+    functionUrl: 'http://localhost:5000/api',
     
-    // Example: 
-    // functionUrl: 'https://cloud.appwrite.io/v1/functions/6789abcd1234/executions'
+    // Uncomment below for Appwrite deployment
+    // functionUrl: 'https://69246267000d261cd469.fra.appwrite.run'
 };
 
 // For local development, you can use:
