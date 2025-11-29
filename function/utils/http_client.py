@@ -3,7 +3,6 @@ HTTP Client with simple headers - based on mobile-specs-api approach.
 """
 
 import requests
-from fake_useragent import UserAgent
 from typing import Optional, Dict
 import time
 import random
@@ -20,7 +19,6 @@ class HTTPClient:
             delay_range: Tuple of (min, max) seconds to wait between requests
         """
         self.session = requests.Session()
-        self.ua = UserAgent()
         self.delay_range = delay_range
         
         # Set simple browser headers (mobile-specs-api approach)
@@ -96,4 +94,5 @@ class HTTPClient:
     
     def rotate_user_agent(self):
         """Rotate to a new random user agent."""
-        self.session.headers['User-Agent'] = self.ua.random
+        # Use fixed user agent since fake_useragent was removed
+        pass
