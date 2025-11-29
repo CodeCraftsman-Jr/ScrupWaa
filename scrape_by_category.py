@@ -34,8 +34,7 @@ class CategoryScraper:
     
     def __init__(self):
         self.browser = HeadlessBrowserClient()
-        self.scraper = GSMArenaScraper()
-        self.scraper.client = self.browser  # Reuse the same browser instance
+        self.scraper = GSMArenaScraper(client=self.browser)
         self.mongo_client = MongoDBClient()
         # Use different collection for category-based scraping
         self.mongo_client.collection = self.mongo_client.db["phone_category_data"]

@@ -17,8 +17,12 @@ class GSMArenaScraper:
     
     BASE_URL = "https://www.gsmarena.com"
     
-    def __init__(self):
-        self.client = HeadlessBrowserClient()
+    def __init__(self, client=None):
+        # Allow passing an existing browser client to avoid multiple instances
+        if client:
+            self.client = client
+        else:
+            self.client = HeadlessBrowserClient()
     
     def scrape_phone(self, url: str) -> Optional[Phone]:
         """
