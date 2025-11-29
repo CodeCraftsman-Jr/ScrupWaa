@@ -92,11 +92,14 @@ class AllBrandsScraper:
             if page_num == 1:
                 page_url = brand_url
             else:
-                separator = "&" if "?" in brand_url else "?"
-                page_url = f"{brand_url}{separator}iPage={page_num}"
+                # GSMArena uses &sName=brandname.php3 format, need to add iPage
+                page_url = f"{brand_url}&iPage={page_num}"
+            
+            print(f"   📄 Page {page_num}: {page_url}")
             
             response = self.browser.get(page_url)
             if not response:
+                print(f"   ❌ Failed to load page {page_num}")
                 break
             
             soup = BeautifulSoup(response.text, 'lxml')
@@ -105,7 +108,10 @@ class AllBrandsScraper:
             phone_links = soup.select('div.makers a')
             
             if not phone_links:
+                print(f"   ✅ No more phones on page {page_num}")
                 break
+            
+            print(f"   ✅ Found {len(phone_links)} phones on page {page_num}")
             
             for link in phone_links:
                 href = link.get('href')
@@ -114,16 +120,19 @@ class AllBrandsScraper:
                     phone_urls.append(full_url)
                     
                     if max_results > 0 and len(phone_urls) >= max_results:
+                        print(f"   🎯 Reached max_results limit: {max_results}")
                         return phone_urls
             
-            # Check for next page
+            # Check for next page link
             next_page = soup.select_one('a.pages-next')
             if not next_page:
+                print(f"   ✅ No next page button found, ending pagination")
                 break
             
             page_num += 1
-            time.sleep(1)
+            time.sleep(2)
         
+        print(f"   📊 Total phones collected: {len(phone_urls)}")
         return phone_urls
     
     def scrape_brand(self, brand_name: str, brand_url: str, device_count: int, max_results: int = 0):
