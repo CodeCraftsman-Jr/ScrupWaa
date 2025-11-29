@@ -134,7 +134,12 @@ def main():
         
         # Convert to dict for JSON serialization
         results_dict = []
-        for phone in results.get('gsmarena', []):
+        
+        # Get phones from scrapers.gsmarena.phones structure
+        gsmarena_data = results.get('scrapers', {}).get('gsmarena', {})
+        phones = gsmarena_data.get('phones', [])
+        
+        for phone in phones:
             if hasattr(phone, 'to_dict'):
                 results_dict.append(phone.to_dict())
             else:
