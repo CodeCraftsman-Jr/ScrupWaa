@@ -16,6 +16,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(current_dir, 'function'))
 
 from universal_search import UniversalSearch
+from utils.mongodb_client import MongoDBClient
 
 
 def fetch_proxies_from_appwrite():
@@ -120,6 +121,15 @@ def main():
     # Initialize searcher
     searcher = UniversalSearch()
     
+    # Initialize MongoDB client
+    try:
+        mongo_client = MongoDBClient()
+        print("[MONGODB] ✅ MongoDB initialized")
+    except Exception as e:
+        print(f"[MONGODB] ⚠️  MongoDB initialization failed: {e}")
+        print("[MONGODB] Continuing without MongoDB (will save to JSON only)")
+        mongo_client = None
+    
     # Run search
     try:
         print("\n" + "=" * 60)
@@ -145,38 +155,73 @@ def main():
             else:
                 results_dict.append(phone)
         
-        # Save results
+        # Save results to JSON
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = f"data/github_scrape_{search_query.replace(' ', '_')}_{timestamp}.json"
         
         # Ensure data directory exists
         os.makedirs('data', exist_ok=True)
         
+        # Save to MongoDB
+        mongo_doc_id = None
+        if mongo_client:
+            try:
+                mongo_doc_id = mongo_client.save_scrape_results(
+                    query=search_query,
+                    phones=results_dict,
+                    method='headless_browser'
+                )
+            except Exception as e:
+                print(f"[MONGODB] ⚠️  Failed to save to MongoDB: {e}")
+        
+        # Save to JSON file
         with open(filename, 'w', encoding='utf-8') as f:
-            json.dump({
+            json_data = {
                 'query': search_query,
                 'timestamp': datetime.now().isoformat(),
                 'total_results': len(results_dict),
                 'method': 'headless_browser',
                 'results': results_dict
-            }, f, indent=2, ensure_ascii=False)
+            }
+            
+            if mongo_doc_id:
+                json_data['mongodb_id'] = mongo_doc_id
+            
+            json.dump(json_data, f, indent=2, ensure_ascii=False)
         
         print("\n" + "=" * 60)
         print("SCRAPING COMPLETE")
         print("=" * 60)
         print(f"✅ Scraped {len(results_dict)} phones")
-        print(f"✅ Saved to: {filename}")
+        print(f"✅ Saved to JSON: {filename}")
+        if mongo_doc_id:
+            print(f"✅ Saved to MongoDB: {mongo_doc_id}")
         print(f"✅ Method: Headless Browser (Stealth Mode)")
         
         # Also save as latest.json for easy access
         with open('data/latest_scrape.json', 'w', encoding='utf-8') as f:
-            json.dump({
+            json_data = {
                 'query': search_query,
                 'timestamp': datetime.now().isoformat(),
                 'total_results': len(results_dict),
                 'method': 'headless_browser',
                 'results': results_dict
-            }, f, indent=2, ensure_ascii=False)
+            }
+            
+            if mongo_doc_id:
+                json_data['mongodb_id'] = mongo_doc_id
+            
+            json.dump(json_data, f, indent=2, ensure_ascii=False)
+        
+        # Get MongoDB stats if available
+        if mongo_client:
+            try:
+                stats = mongo_client.get_collection_stats()
+                print(f"\n[MONGODB] Database Stats:")
+                print(f"  - Total scrapes: {stats.get('total_scrapes', 0)}")
+                print(f"  - Total phones: {stats.get('total_phones', 0)}")
+            except Exception as e:
+                print(f"[MONGODB] ⚠️  Could not fetch stats: {e}")
         
         return 0
     
