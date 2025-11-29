@@ -49,25 +49,28 @@ class MongoDBClient:
             print(f"[MONGODB] ❌ Connection failed: {e}")
             raise
     
-    def save_scrape_results(self, query: str, phones: List[Dict], method: str = "headless_browser") -> Optional[str]:
+    def save_scrape_results(self, query: str, phones: List[Dict], method: str = "headless_browser", source: str = "GSMArena") -> Optional[str]:
         """
-        Save scraping results to MongoDB.
+        Save scraping results to MongoDB with proper organization.
         
         Args:
             query: Search query used
-            phones: List of phone data dictionaries
+            phones: List of phone data dictionaries (each should have 'source' as first field)
             method: Scraping method used
+            source: Source website name
             
         Returns:
             Inserted document ID or None if failed
         """
         try:
+            # Organize document structure
             document = {
                 'query': query,
+                'source': source,
                 'timestamp': datetime.utcnow(),
                 'method': method,
                 'total_results': len(phones),
-                'phones': phones,
+                'phones': phones,  # Array of phones with source as first field
                 'created_at': datetime.utcnow()
             }
             
@@ -82,21 +85,28 @@ class MongoDBClient:
             print(f"[MONGODB] ❌ Failed to save: {e}")
             return None
     
-    def save_phone(self, phone_data: Dict) -> Optional[str]:
+    def save_phone(self, query: str, phone_data: Dict, method: str = "headless_browser") -> Optional[str]:
         """
-        Save a single phone to MongoDB.
+        Save a single phone to MongoDB as one document.
         
         Args:
-            phone_data: Phone data dictionary
+            query: Search query used
+            phone_data: Phone data dictionary (should have 'source' field)
+            method: Scraping method used
             
         Returns:
             Inserted document ID or None if failed
         """
         try:
-            # Add timestamp
-            phone_data['scraped_at'] = datetime.utcnow()
+            # Create document with metadata and phone data at same level
+            document = {
+                'query': query,
+                'method': method,
+                'scraped_at': datetime.utcnow(),
+                **phone_data  # Spread phone data fields (includes 'source' as first field)
+            }
             
-            result = self.collection.insert_one(phone_data)
+            result = self.collection.insert_one(document)
             return str(result.inserted_id)
             
         except Exception as e:
@@ -165,20 +175,11 @@ class MongoDBClient:
     def get_collection_stats(self) -> Dict:
         """Get statistics about the collection."""
         try:
+            # Now each document is one phone, so just count documents
             count = self.collection.count_documents({})
             
-            # Get total phones across all documents
-            pipeline = [
-                {'$unwind': '$phones'},
-                {'$count': 'total_phones'}
-            ]
-            
-            result = list(self.collection.aggregate(pipeline))
-            total_phones = result[0]['total_phones'] if result else 0
-            
             return {
-                'total_scrapes': count,
-                'total_phones': total_phones,
+                'total_documents': count,
                 'collection': self.collection_name,
                 'database': self.database_name
             }

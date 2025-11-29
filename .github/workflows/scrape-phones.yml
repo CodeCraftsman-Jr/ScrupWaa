@@ -39,10 +39,10 @@ jobs:
       
       - name: Run scraper with headless browser
         env:
-          MONGO_DB_USERNAME: "baeonuser"
-          MONGO_DB_PASSWORD: "6JtLUmRHTMZ8IYJA"
-          MONGO_DB_DATABASE_NAME: "baeonDBStage"
-          MONGO_DB_DOMAIN_NAME: "baeonncluster.oakjn89"
+          MONGO_DB_USERNAME: ${{ secrets.MONGO_DB_USERNAME }}
+          MONGO_DB_PASSWORD: ${{ secrets.MONGO_DB_PASSWORD }}
+          MONGO_DB_DATABASE_NAME: ${{ secrets.MONGO_DB_DATABASE_NAME }}
+          MONGO_DB_DOMAIN_NAME: ${{ secrets.MONGO_DB_DOMAIN_NAME }}
           SEARCH_QUERY: ${{ github.event.inputs.search_query || 'Samsung' }}
           MAX_RESULTS: ${{ github.event.inputs.max_results || '20' }}
         run: |

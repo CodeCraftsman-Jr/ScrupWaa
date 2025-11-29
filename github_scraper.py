@@ -150,10 +150,15 @@ def main():
         phones = gsmarena_data.get('phones', [])
         
         for phone in phones:
-            if hasattr(phone, 'to_dict'):
-                results_dict.append(phone.to_dict())
-            else:
-                results_dict.append(phone)
+            phone_dict = phone.to_dict() if hasattr(phone, 'to_dict') else phone
+            
+            # Add source field at the beginning
+            organized_phone = {
+                'source': 'GSMArena',
+                **phone_dict  # Spread all existing phone data
+            }
+            
+            results_dict.append(organized_phone)
         
         # Save results to JSON
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -162,15 +167,18 @@ def main():
         # Ensure data directory exists
         os.makedirs('data', exist_ok=True)
         
-        # Save to MongoDB
-        mongo_doc_id = None
+        # Save to MongoDB (one document per phone)
+        mongo_doc_ids = []
         if mongo_client:
             try:
-                mongo_doc_id = mongo_client.save_scrape_results(
-                    query=search_query,
-                    phones=results_dict,
-                    method='headless_browser'
-                )
+                for phone in results_dict:
+                    doc_id = mongo_client.save_phone(
+                        query=search_query,
+                        phone_data=phone,
+                        method='headless_browser'
+                    )
+                    if doc_id:
+                        mongo_doc_ids.append(doc_id)
             except Exception as e:
                 print(f"[MONGODB] ⚠️  Failed to save to MongoDB: {e}")
         
@@ -184,8 +192,8 @@ def main():
                 'results': results_dict
             }
             
-            if mongo_doc_id:
-                json_data['mongodb_id'] = mongo_doc_id
+            if mongo_doc_ids:
+                json_data['mongodb_ids'] = mongo_doc_ids
             
             json.dump(json_data, f, indent=2, ensure_ascii=False)
         
@@ -194,8 +202,8 @@ def main():
         print("=" * 60)
         print(f"✅ Scraped {len(results_dict)} phones")
         print(f"✅ Saved to JSON: {filename}")
-        if mongo_doc_id:
-            print(f"✅ Saved to MongoDB: {mongo_doc_id}")
+        if mongo_doc_ids:
+            print(f"✅ Saved to MongoDB: {len(mongo_doc_ids)} documents created")
         print(f"✅ Method: Headless Browser (Stealth Mode)")
         
         # Also save as latest.json for easy access
@@ -208,8 +216,8 @@ def main():
                 'results': results_dict
             }
             
-            if mongo_doc_id:
-                json_data['mongodb_id'] = mongo_doc_id
+            if mongo_doc_ids:
+                json_data['mongodb_ids'] = mongo_doc_ids
             
             json.dump(json_data, f, indent=2, ensure_ascii=False)
         
@@ -218,8 +226,8 @@ def main():
             try:
                 stats = mongo_client.get_collection_stats()
                 print(f"\n[MONGODB] Database Stats:")
-                print(f"  - Total scrapes: {stats.get('total_scrapes', 0)}")
-                print(f"  - Total phones: {stats.get('total_phones', 0)}")
+                print(f"  - Total documents: {stats.get('total_documents', 0)}")
+                print(f"  - Total phones: {stats.get('total_documents', 0)}")
             except Exception as e:
                 print(f"[MONGODB] ⚠️  Could not fetch stats: {e}")
         
