@@ -1,0 +1,68 @@
+name: Scrape All Brands
+
+on:
+  # Run on manual trigger
+  workflow_dispatch:
+    inputs:
+      max_results_per_brand:
+        description: 'Max results per brand (0 for all, recommended: 50-100)'
+        required: false
+        default: '50'
+      delay_between_brands:
+        description: 'Delay between brands in seconds'
+        required: false
+        default: '10'
+  
+  # Run on schedule (optional - uncomment to enable weekly scraping)
+  # schedule:
+  #   - cron: '0 2 * * 0'  # Every Sunday at 2 AM UTC
+
+jobs:
+  scrape-all:
+    runs-on: ubuntu-latest
+    timeout-minutes: 480  # 8 hours max
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          clean: true
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+      
+      - name: Clear Python cache
+        run: |
+          pip cache purge || true
+          find . -type d -name __pycache__ -exec rm -rf {} + || true
+          find . -type f -name "*.pyc" -delete || true
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          playwright install chromium
+          playwright install-deps
+      
+      - name: Run all brands scraper
+        env:
+          MONGO_DB_USERNAME: ${{ secrets.MONGO_DB_USERNAME }}
+          MONGO_DB_PASSWORD: ${{ secrets.MONGO_DB_PASSWORD }}
+          MONGO_DB_DATABASE_NAME: ${{ secrets.MONGO_DB_DATABASE_NAME }}
+          MONGO_DB_DOMAIN_NAME: ${{ secrets.MONGO_DB_DOMAIN_NAME }}
+          MAX_RESULTS_PER_BRAND: ${{ github.event.inputs.max_results_per_brand || '50' }}
+          DELAY_BETWEEN_BRANDS: ${{ github.event.inputs.delay_between_brands || '10' }}
+        run: |
+          python scrape_all_brands.py
+      
+      - name: Upload summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scrape-summary
+          path: |
+            data/*.json
+          retention-days: 30
