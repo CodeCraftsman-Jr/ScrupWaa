@@ -27,6 +27,9 @@ class AllBrandsScraper:
         self.browser = HeadlessBrowserClient()
         self.scraper = GSMArenaScraper()
         self.mongo_client = MongoDBClient()
+        # Use different collection for all makers scraping
+        self.mongo_client.collection = self.mongo_client.db["phone_all_makers"]
+        print(f"[MONGODB] Using collection: phone_all_makers")
     
     def get_all_brands(self):
         """
