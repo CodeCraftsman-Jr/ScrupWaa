@@ -49,17 +49,12 @@ class HTTPClient:
         Returns:
             Response object or None if all retries failed
         """
+        # Use shorter timeout when using proxies
+        timeout = kwargs.pop('timeout', 15 if 'proxies' in kwargs else 30)
+        
         for attempt in range(1, max_retries + 1):
             try:
-                # Log if using proxy
-                if 'proxies' in kwargs and kwargs['proxies']:
-                    proxy_str = kwargs['proxies'].get('http', 'Unknown')
-                    # Mask credentials in log
-                    if '@' in proxy_str:
-                        proxy_str = proxy_str.split('@')[1] if '@' in proxy_str else proxy_str
-                    print(f"🔒 Request via proxy: {proxy_str[:50]}")
-                
-                response = self.session.get(url, timeout=30, **kwargs)
+                response = self.session.get(url, timeout=timeout, **kwargs)
                 response.raise_for_status()
                 return response
                 
@@ -75,18 +70,27 @@ class HTTPClient:
                     elif e.response.status_code in [403, 401]:
                         print(f"⚠️  Access denied (attempt {attempt}/{max_retries})")
                     else:
-                        print(f"❌ HTTP error (attempt {attempt}/{max_retries}): {e}")
+                        print(f"❌ HTTP {e.response.status_code} (attempt {attempt}/{max_retries})")
                 else:
-                    print(f"❌ HTTP error (attempt {attempt}/{max_retries}): {e}")
+                    print(f"❌ HTTP error (attempt {attempt}/{max_retries}): {str(e)[:80]}")
                 
                 if attempt == max_retries:
                     return None
                     
-            except requests.exceptions.RequestException as e:
-                print(f"❌ Request error (attempt {attempt}/{max_retries}): {e}")
+            except (requests.exceptions.Timeout, 
+                    requests.exceptions.ConnectionError,
+                    requests.exceptions.ProxyError) as e:
+                # These errors are common with bad proxies, fail fast
+                print(f"❌ Connection error (attempt {attempt}/{max_retries}): {type(e).__name__}")
                 if attempt == max_retries:
                     return None
-                time.sleep(random.uniform(2, 5))
+                time.sleep(1)  # Short delay before retry
+                    
+            except requests.exceptions.RequestException as e:
+                print(f"❌ Request error (attempt {attempt}/{max_retries}): {str(e)[:80]}")
+                if attempt == max_retries:
+                    return None
+                time.sleep(random.uniform(1, 3))
         
         return None
     

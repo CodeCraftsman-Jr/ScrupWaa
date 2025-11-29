@@ -66,15 +66,39 @@ def fetch_proxies_from_appwrite():
 
 
 def setup_proxy_rotation(proxies):
-    """Set up proxy rotation for HTTP client"""
+    """Set up proxy rotation for HTTP client with failure tracking"""
     if not proxies:
         return None
     
-    def get_random_proxy():
-        """Get a random proxy from the list"""
-        return random.choice(proxies) if proxies else None
+    # Track failed proxies
+    failed_proxies = set()
+    current_proxy_index = [0]  # Use list to maintain reference
     
-    return get_random_proxy
+    def get_next_proxy():
+        """Get next working proxy from the list, rotating on failures"""
+        if not proxies or len(failed_proxies) >= len(proxies):
+            return None
+        
+        # Try up to len(proxies) times to find a working proxy
+        for _ in range(len(proxies)):
+            proxy = proxies[current_proxy_index[0] % len(proxies)]
+            current_proxy_index[0] += 1
+            
+            # Skip failed proxies
+            proxy_key = proxy.get('http', '')
+            if proxy_key not in failed_proxies:
+                return proxy
+        
+        return None
+    
+    def mark_proxy_failed(proxy):
+        """Mark a proxy as failed"""
+        if proxy:
+            proxy_key = proxy.get('http', '')
+            failed_proxies.add(proxy_key)
+            print(f"[PROXY] ❌ Marked proxy as failed: {proxy_key[:50]}... ({len(failed_proxies)}/{len(proxies)} failed)")
+    
+    return get_next_proxy, mark_proxy_failed
 
 
 def main():
@@ -100,18 +124,55 @@ def main():
     
     # Inject proxy getter into HTTP client if available
     if proxy_getter and hasattr(searcher.gsmarena, 'client'):
+        get_next_proxy, mark_proxy_failed = proxy_getter
         original_get = searcher.gsmarena.client.get
         
+        current_proxy = [None]  # Track current proxy
+        
         def get_with_proxy(url, **kwargs):
-            """Wrapper to add proxy to requests"""
-            proxy = proxy_getter()
-            if proxy:
-                kwargs['proxies'] = proxy
-                print(f"[PROXY] Using proxy: {proxy.get('http', 'Unknown')[:50]}...")
+            """Wrapper to add proxy to requests with rotation on failure"""
+            max_proxy_retries = 5  # Try up to 5 different proxies
+            
+            for proxy_attempt in range(max_proxy_retries):
+                # Get a new proxy for each attempt
+                proxy = get_next_proxy()
+                current_proxy[0] = proxy
+                
+                if proxy:
+                    kwargs['proxies'] = proxy
+                    proxy_display = proxy.get('http', 'Unknown')
+                    # Mask IP in log (show last part only)
+                    if '//' in proxy_display:
+                        proxy_display = proxy_display.split('//')[1]
+                    print(f"🔒 Using proxy [{proxy_attempt + 1}/{max_proxy_retries}]: {proxy_display[:30]}...")
+                else:
+                    # No more proxies available, try without proxy
+                    print(f"⚠️  No proxies available, trying direct connection...")
+                    kwargs.pop('proxies', None)
+                
+                try:
+                    # Try the request with current proxy
+                    result = original_get(url, max_retries=2, **kwargs)  # Reduce retries per proxy
+                    if result:
+                        return result
+                    # If result is None, mark proxy as failed and try next one
+                    if proxy:
+                        mark_proxy_failed(proxy)
+                except Exception as e:
+                    print(f"❌ Proxy failed: {str(e)[:100]}")
+                    if proxy:
+                        mark_proxy_failed(proxy)
+                    continue
+            
+            # All proxies failed, try one last time without proxy
+            print(f"⚠️  All proxies failed, attempting direct connection...")
+            kwargs.pop('proxies', None)
             return original_get(url, **kwargs)
         
         searcher.gsmarena.client.get = get_with_proxy
-        print("[PROXY] ✅ Proxy rotation enabled")
+        print("[PROXY] ✅ Proxy rotation with failover enabled")
+    else:
+        print("[PROXY] ⚠️  No proxy rotation (running without proxies)")
     
     # Run search
     try:
