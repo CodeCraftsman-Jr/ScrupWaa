@@ -8,17 +8,17 @@ import re
 import time
 import random
 
-from utils.http_client import HTTPClient
+from utils.browser_client import HeadlessBrowserClient
 from models.phone import Phone
 
 
 class GSMArenaScraper:
-    """Scraper for GSMArena website."""
+    """Scraper for GSMArena website using headless browser."""
     
     BASE_URL = "https://www.gsmarena.com"
     
     def __init__(self):
-        self.client = HTTPClient()
+        self.client = HeadlessBrowserClient()
     
     def scrape_phone(self, url: str) -> Optional[Phone]:
         """
