@@ -14,10 +14,13 @@ class MongoDBClient:
     def __init__(self):
         """Initialize MongoDB connection."""
         # Get credentials from environment
-        username = os.environ.get('MONGO_DB_USERNAME', 'baeonuser')
-        password = os.environ.get('MONGO_DB_PASSWORD', '6JtLUmRHTMZ8IYJA')
-        database = os.environ.get('MONGO_DB_DATABASE_NAME', 'baeonDBStage')
-        domain = os.environ.get('MONGO_DB_DOMAIN_NAME', 'baeonncluster.oakjn89')
+        username = os.environ.get('MONGO_DB_USERNAME')
+        password = os.environ.get('MONGO_DB_PASSWORD')
+        database = os.environ.get('MONGO_DB_DATABASE_NAME')
+        domain = os.environ.get('MONGO_DB_DOMAIN_NAME')
+        
+        if not all([username, password, database, domain]):
+            raise ValueError("MongoDB credentials not found in environment variables")
         
         # Construct connection string
         self.connection_string = f"mongodb+srv://{username}:{password}@{domain}.mongodb.net/?retryWrites=true&w=majority"

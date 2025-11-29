@@ -1,6 +1,10 @@
 # Output directory for scraped data
 *.json
 
+# Environment variables
+.env
+.env.local
+
 # Python
 __pycache__/
 *.py[cod]
