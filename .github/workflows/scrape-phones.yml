@@ -24,11 +24,20 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          clean: true
       
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
+          cache: 'pip'
+      
+      - name: Clear Python cache
+        run: |
+          pip cache purge || true
+          find . -type d -name __pycache__ -exec rm -rf {} + || true
+          find . -type f -name "*.pyc" -delete || true
       
       - name: Install dependencies
         run: |
