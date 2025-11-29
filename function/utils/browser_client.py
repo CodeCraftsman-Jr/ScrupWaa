@@ -103,15 +103,18 @@ class HeadlessBrowserClient:
                 # Random delay before navigation
                 time.sleep(random.uniform(0.5, 1.5))
                 
-                # Navigate to page with realistic timeout
-                response = page.goto(url, wait_until='domcontentloaded', timeout=30000)
+                # Navigate to page with longer timeout
+                print(f"🌐 Loading: {url[:60]}...")
+                response = page.goto(url, wait_until='domcontentloaded', timeout=60000)
                 
                 if response and response.status == 200:
-                    # Wait for content to load
-                    page.wait_for_load_state('networkidle', timeout=10000)
+                    # Simple timeout instead of networkidle (which can hang)
+                    print(f"⏳ Waiting for page to settle...")
+                    page.wait_for_timeout(3000)  # 3 second wait
                     
                     # Get page content
                     content = page.content()
+                    print(f"✅ Page loaded successfully ({len(content)} bytes)")
                     
                     # Check for bot detection
                     if self._is_blocked(content):

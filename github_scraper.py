@@ -104,75 +104,21 @@ def setup_proxy_rotation(proxies):
 def main():
     print("=" * 60)
     print("GitHub Actions Phone Scraper")
+    print("Using Headless Browser (Playwright)")
     print("=" * 60)
     
     # Get configuration from environment
     search_query = os.environ.get('SEARCH_QUERY', 'Samsung')
     max_results = int(os.environ.get('MAX_RESULTS', 20))
     
-    # Fetch proxies from Appwrite
-    proxies = fetch_proxies_from_appwrite()
-    proxy_getter = setup_proxy_rotation(proxies)
-    
+    # Note: Not using proxies with headless browser for better stability
     print(f"\n[CONFIG] Search query: {search_query}")
     print(f"[CONFIG] Max results: {max_results if max_results > 0 else 'All'}")
-    print(f"[CONFIG] Proxies available: {len(proxies)}")
+    print(f"[CONFIG] Mode: Headless Browser (No Proxies)")
     print()
     
     # Initialize searcher
     searcher = UniversalSearch()
-    
-    # Inject proxy getter into HTTP client if available
-    if proxy_getter and hasattr(searcher.gsmarena, 'client'):
-        get_next_proxy, mark_proxy_failed = proxy_getter
-        original_get = searcher.gsmarena.client.get
-        
-        current_proxy = [None]  # Track current proxy
-        
-        def get_with_proxy(url, **kwargs):
-            """Wrapper to add proxy to requests with rotation on failure"""
-            max_proxy_retries = 5  # Try up to 5 different proxies
-            
-            for proxy_attempt in range(max_proxy_retries):
-                # Get a new proxy for each attempt
-                proxy = get_next_proxy()
-                current_proxy[0] = proxy
-                
-                if proxy:
-                    kwargs['proxies'] = proxy
-                    proxy_display = proxy.get('http', 'Unknown')
-                    # Mask IP in log (show last part only)
-                    if '//' in proxy_display:
-                        proxy_display = proxy_display.split('//')[1]
-                    print(f"🔒 Using proxy [{proxy_attempt + 1}/{max_proxy_retries}]: {proxy_display[:30]}...")
-                else:
-                    # No more proxies available, try without proxy
-                    print(f"⚠️  No proxies available, trying direct connection...")
-                    kwargs.pop('proxies', None)
-                
-                try:
-                    # Try the request with current proxy
-                    result = original_get(url, max_retries=2, **kwargs)  # Reduce retries per proxy
-                    if result:
-                        return result
-                    # If result is None, mark proxy as failed and try next one
-                    if proxy:
-                        mark_proxy_failed(proxy)
-                except Exception as e:
-                    print(f"❌ Proxy failed: {str(e)[:100]}")
-                    if proxy:
-                        mark_proxy_failed(proxy)
-                    continue
-            
-            # All proxies failed, try one last time without proxy
-            print(f"⚠️  All proxies failed, attempting direct connection...")
-            kwargs.pop('proxies', None)
-            return original_get(url, **kwargs)
-        
-        searcher.gsmarena.client.get = get_with_proxy
-        print("[PROXY] ✅ Proxy rotation with failover enabled")
-    else:
-        print("[PROXY] ⚠️  No proxy rotation (running without proxies)")
     
     # Run search
     try:
@@ -206,7 +152,7 @@ def main():
                 'query': search_query,
                 'timestamp': datetime.now().isoformat(),
                 'total_results': len(results_dict),
-                'proxies_used': len(proxies),
+                'method': 'headless_browser',
                 'results': results_dict
             }, f, indent=2, ensure_ascii=False)
         
@@ -215,7 +161,7 @@ def main():
         print("=" * 60)
         print(f"✅ Scraped {len(results_dict)} phones")
         print(f"✅ Saved to: {filename}")
-        print(f"✅ Proxies used: {len(proxies)}")
+        print(f"✅ Method: Headless Browser (Stealth Mode)")
         
         # Also save as latest.json for easy access
         with open('data/latest_scrape.json', 'w', encoding='utf-8') as f:
@@ -223,7 +169,7 @@ def main():
                 'query': search_query,
                 'timestamp': datetime.now().isoformat(),
                 'total_results': len(results_dict),
-                'proxies_used': len(proxies),
+                'method': 'headless_browser',
                 'results': results_dict
             }, f, indent=2, ensure_ascii=False)
         

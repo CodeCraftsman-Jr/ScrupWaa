@@ -37,13 +37,8 @@ jobs:
           playwright install chromium
           playwright install-deps
       
-      - name: Run scraper with proxies
+      - name: Run scraper with headless browser
         env:
-          APPWRITE_ENDPOINT: "https://cloud.appwrite.io/v1"
-          APPWRITE_PROJECT_ID: "68a227de003201ae2463"
-          APPWRITE_DATABASE_ID: "68a227fb00180c4a541a"
-          APPWRITE_COLLECTION_ID: "68a2280e0039af9b6a24"
-          APPWRITE_API_KEY: "standard_07fb15b720e462b3836f463480a1806e1bdff6395d21e97cb0d835c7403329923073329e7fb76ee8de3f42e732d391583be826c2a91afe6014c7e248cf14b64880e9597257eec3ad82c78bf1b13b99b9ecb8bc7357fab9284afa73e8e245788449418dcc468499870fd5da6ebbd5b1148370260ab2dc82431cd5ad5b2df32621"
           SEARCH_QUERY: ${{ github.event.inputs.search_query || 'Samsung' }}
           MAX_RESULTS: ${{ github.event.inputs.max_results || '20' }}
         run: |
