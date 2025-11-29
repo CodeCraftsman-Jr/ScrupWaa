@@ -6,7 +6,9 @@ Categories: Smartphones, Tablets, Smart Watches, Feature Phones, etc.
 import os
 import sys
 import time
+import random
 from datetime import datetime
+from typing import List
 from bs4 import BeautifulSoup
 
 # Add function directory to path
@@ -33,6 +35,7 @@ class CategoryScraper:
     def __init__(self):
         self.browser = HeadlessBrowserClient()
         self.scraper = GSMArenaScraper()
+        self.scraper.client = self.browser  # Reuse the same browser instance
         self.mongo_client = MongoDBClient()
         # Use different collection for category-based scraping
         self.mongo_client.collection = self.mongo_client.db["phone_category_data"]
