@@ -158,7 +158,9 @@ class AllBrandsScraper:
             phone_urls = self.get_phones_from_brand(brand_url, max_results)
             
             if not phone_urls:
-                print(f"⚠️  No phones found")
+                print(f"⚠️  No phones found (likely rate limited)")
+                print(f"⏰ Cooling down for 120 seconds...")
+                time.sleep(120)  # Long cooldown after rate limit
                 return 0
             
             print(f"📊 Found {len(phone_urls)} phones to scrape")

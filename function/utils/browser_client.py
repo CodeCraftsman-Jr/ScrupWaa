@@ -137,11 +137,15 @@ class HeadlessBrowserClient:
                 
                 elif response and response.status == 429:
                     print(f"❌ Rate limited (attempt {attempt}/{max_retries})")
-                    wait_time = (2 ** attempt) * 5
+                    wait_time = (2 ** attempt) * 15  # Longer wait: 30s, 60s, 120s
                     if attempt < max_retries:
-                        time.sleep(wait_time)
+                        print(f"⏰ Cooling down for {wait_time}s...")
                         page.close()
+                        time.sleep(wait_time)
                         continue
+                    else:
+                        page.close()
+                        return None
                 
                 else:
                     print(f"❌ HTTP {response.status if response else 'error'} (attempt {attempt}/{max_retries})")
